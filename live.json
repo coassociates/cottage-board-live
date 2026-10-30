@@ -1,35 +1,14 @@
 {
- "generated_at": "2026-10-30T19:23:09+00:00",
+ "generated_at": "2026-10-30T19:28:13+00:00",
  "counter": {
   "window_minutes": 30,
-  "sample": 5,
-  "wait_now_p50_sec": 1060,
-  "wait_today_p50_sec": 823,
-  "by_half_hour": [
-   {
-    "t": "12:00",
-    "p50_sec": 137
-   },
-   {
-    "t": "17:30",
-    "p50_sec": 823
-   },
-   {
-    "t": "18:00",
-    "p50_sec": 779
-   },
-   {
-    "t": "18:30",
-    "p50_sec": 1344
-   },
-   {
-    "t": "19:00",
-    "p50_sec": 1060
-   }
-  ]
+  "sample": 0,
+  "wait_now_p50_sec": null,
+  "wait_today_p50_sec": null,
+  "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-10-30T19:23:09+00:00",
+  "fetched_at": "2026-10-30T19:28:13+00:00",
   "temp_c": 12,
   "feels_c": 10,
   "desc": "Cloudy",
