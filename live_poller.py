@@ -80,20 +80,26 @@ def square_orders(token, location, since_utc):
 def order_wait(o):
     """(start, end, field) for one order, or None.
 
-    Strictly the kitchen display's own stamp: an order counts only when the KDS has bumped it,
-    which Square records as fulfilment state PREPARED/COMPLETED with a `ready_at` time in the
-    pickup or delivery block. Till events (payment, closing the sale) are never used
-    (Chris, 2026-10-30: use the KDS data, not the till).
+    Strictly the kitchen display's own stamp (Chris, 2026-10-30: use the KDS data, not the
+    till). When the KDS bumps a ticket Square moves the fulfilment to PREPARED and touches the
+    order's `updated_at`; nothing else touches an open kiosk order between placing and bump,
+    so for an OPEN order in PREPARED state `updated_at` is the bump time. A `ready_at` stamp
+    is used if Square ever writes one. Orders COMPLETED at the till, or swept closed next
+    morning, carry no usable bump time and are ignored.
     """
     created = parse_ts(o.get("created_at"))
+    updated = parse_ts(o.get("updated_at"))
     best = None
     for f in o.get("fulfillments", []) or []:
         for blk in ("pickup_details", "delivery_details"):
             d = f.get(blk) or {}
             placed = parse_ts(d.get("placed_at")) or created
             ready = parse_ts(d.get("ready_at"))
+            field = f"{blk}.ready_at"
+            if not ready and f.get("state") == "PREPARED" and o.get("state") == "OPEN":
+                ready, field = updated, "prepared.updated_at"
             if placed and ready and (best is None or ready < best[1]):
-                best = (placed, ready, f"{blk}.ready_at")
+                best = (placed, ready, field)
     return best
 
 
