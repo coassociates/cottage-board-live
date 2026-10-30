@@ -1,0 +1,45 @@
+name: Live loop
+
+# A self-sustaining loop: polls every 5 minutes during trading hours, idles overnight, and
+# starts its own successor before GitHub's 6-hour job limit. Does not depend on GitHub's cron,
+# which never started for this repo on 2026-10-30. update.yml remains as a manual/cron backstop
+# in the same concurrency group, so it only runs if this loop is not running.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 8 * * *"   # daily backstop kick at 08:15 UTC, if cron ever works
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: live
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Poll and publish for up to 5.5 hours
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
+          MET_OFFICE_API_KEY: ${{ secrets.MET_OFFICE_API_KEY }}
+          WEATHER_PROVIDER: ${{ vars.WEATHER_PROVIDER || 'metoffice' }}
+          COUNTER_EXCLUDE_SOURCES: ${{ vars.COUNTER_EXCLUDE_SOURCES }}
+        run: |
+          git config user.name "cottage-board-bot"
+          git config user.email "cottage-board-bot@users.noreply.github.com"
+          python live_poller.py --out live.json --loop 300 --hours 9-23 --max-minutes 330 --push
+      - name: Start the next loop
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run loop.yml -R "$GITHUB_REPOSITORY"
