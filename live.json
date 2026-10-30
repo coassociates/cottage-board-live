@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-30T22:25:04+00:00",
+ "generated_at": "2026-10-30T22:30:06+00:00",
  "counter": {
   "window_minutes": 30,
   "sample": 0,
@@ -8,9 +8,9 @@
   "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-10-30T22:25:04+00:00",
-  "temp_c": 10,
-  "feels_c": 8,
+  "fetched_at": "2026-10-30T22:30:06+00:00",
+  "temp_c": 9,
+  "feels_c": 6,
   "desc": "Cloudy",
   "icon": "cloud",
   "wind_mph": 11,
@@ -19,9 +19,9 @@
   "hours": [
    {
     "t": "11pm",
-    "icon": "cloud",
-    "temp_c": 10,
-    "rain_pct": 5
+    "icon": "partly-night",
+    "temp_c": 9,
+    "rain_pct": 1
    },
    {
     "t": "12am",
@@ -45,7 +45,7 @@
     "t": "3am",
     "icon": "partly-night",
     "temp_c": 9,
-    "rain_pct": 1
+    "rain_pct": 2
    },
    {
     "t": "4am",
