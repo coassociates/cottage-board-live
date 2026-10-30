@@ -294,12 +294,28 @@ def build_weather(cur, future, now_utc, wind_mph):
 
 
 # -------------------------------------------------------------------- main ----
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="live.json")
-    ap.add_argument("--inspect", action="store_true", help="print recent Square orders (timestamps and sources only, no customer details) and exit")
-    args = ap.parse_args()
+def within_hours(spec, now_utc):
+    if not spec:
+        return True
+    lo, hi = (int(x) for x in spec.split("-"))
+    return lo <= now_utc.hour < hi
 
+
+def git_push(path):
+    """Commit and push the file if it changed. Quietly tolerates a transient push failure."""
+    import subprocess
+    run = lambda *cmd: subprocess.run(cmd, capture_output=True, text=True)
+    run("git", "add", path)
+    if run("git", "diff", "--cached", "--quiet").returncode == 0:
+        print("no change", file=sys.stderr); return
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+    run("git", "commit", "-q", "-m", f"live {stamp}")
+    run("git", "pull", "--rebase", "-q")
+    r = run("git", "push", "-q")
+    print("pushed" if r.returncode == 0 else "push failed: " + r.stderr[-200:], file=sys.stderr)
+
+
+def cycle(args):
     now_utc = datetime.now(timezone.utc)
     out = {"generated_at": now_utc.isoformat(timespec="seconds"), "counter": None, "weather": None}
 
@@ -314,8 +330,8 @@ def main():
             if args.inspect:
                 srcs = {}
                 for o in orders:
-                    s = (o.get("source") or {}).get("name") or "(none)"
-                    srcs[s] = srcs.get(s, 0) + 1
+                    s_ = (o.get("source") or {}).get("name") or "(none)"
+                    srcs[s_] = srcs.get(s_, 0) + 1
                 print("sources today:", srcs)
                 for o in orders[:12]:
                     w = order_wait(o)
@@ -325,7 +341,7 @@ def main():
                                           {k: v for k, v in (f.get("pickup_details") or {}).items() if k != "recipient"})
                                          for f in o.get("fulfillments", []) or []],
                           "-> wait", f"{(w[1] - w[0]).total_seconds():.0f}s via {w[2]}" if w else None)
-                return
+                return False
             out["counter"] = counter_stats(orders, exclude, now_utc)
         except (urllib.error.URLError, urllib.error.HTTPError, KeyError, ValueError) as e:
             print("square failed:", e, file=sys.stderr)
@@ -345,7 +361,37 @@ def main():
 
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=1)
-    print("wrote", args.out, "counter" if out["counter"] else "-", "weather" if out["weather"] else "-")
+    print("wrote", args.out, "counter" if out["counter"] else "-", "weather" if out["weather"] else "-",
+          datetime.now(timezone.utc).strftime("%H:%M:%SZ"))
+    return True
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="live.json")
+    ap.add_argument("--inspect", action="store_true", help="print recent Square orders (timestamps and sources only, no customer details) and exit")
+    ap.add_argument("--loop", type=int, default=0, help="seconds between cycles; 0 runs once")
+    ap.add_argument("--hours", default="", help="UTC hour range to work in, e.g. 9-23; the loop idles outside it")
+    ap.add_argument("--max-minutes", type=int, default=330, help="stop the loop after this long (GitHub jobs are capped at 6 h)")
+    ap.add_argument("--push", action="store_true", help="git commit and push --out after each write")
+    args = ap.parse_args()
+
+    import time
+    if not args.loop:
+        if cycle(args) and args.push:
+            git_push(args.out)
+        return
+    started = time.time()
+    while time.time() - started < args.max_minutes * 60:
+        if within_hours(args.hours, datetime.now(timezone.utc)):
+            try:
+                if cycle(args) and args.push:
+                    git_push(args.out)
+            except Exception as e:   # never let one bad cycle end the loop
+                print("cycle failed:", e, file=sys.stderr)
+        else:
+            print("outside hours, idling", file=sys.stderr)
+        time.sleep(args.loop)
 
 
 if __name__ == "__main__":
