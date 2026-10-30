@@ -3,6 +3,7 @@ name: Update live.json
 on:
   schedule:
     # Every 5 minutes, 09:00-23:00 UTC (covers UK trading hours in GMT and BST).
+    # Re-saved 2026-10-30 to register the schedule; GitHub had not started it after an hour.
     - cron: "*/5 9-23 * * *"
   workflow_dispatch:
 
