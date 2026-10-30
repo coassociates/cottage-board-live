@@ -1,9 +1,9 @@
 {
- "generated_at": "2026-10-30T17:01:43+00:00",
+ "generated_at": "2026-10-30T17:06:46+00:00",
  "counter": {
   "window_minutes": 30,
-  "sample": 1,
-  "wait_now_p50_sec": 567,
+  "sample": 0,
+  "wait_now_p50_sec": null,
   "wait_today_p50_sec": 167,
   "by_half_hour": [
    {
@@ -13,7 +13,7 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-10-30T17:01:43+00:00",
+  "fetched_at": "2026-10-30T17:06:46+00:00",
   "temp_c": 13,
   "feels_c": 11,
   "desc": "Cloudy",
