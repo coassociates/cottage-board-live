@@ -1,9 +1,9 @@
 {
- "generated_at": "2026-10-30T18:57:55+00:00",
+ "generated_at": "2026-10-30T19:02:57+00:00",
  "counter": {
   "window_minutes": 30,
-  "sample": 5,
-  "wait_now_p50_sec": 1206,
+  "sample": 2,
+  "wait_now_p50_sec": 1498,
   "wait_today_p50_sec": 817,
   "by_half_hour": [
    {
@@ -25,21 +25,15 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-10-30T18:57:55+00:00",
+  "fetched_at": "2026-10-30T19:02:57+00:00",
   "temp_c": 12,
-  "feels_c": 9,
+  "feels_c": 10,
   "desc": "Cloudy",
   "icon": "cloud",
-  "wind_mph": 11,
+  "wind_mph": 10,
   "wind_dir": "SE",
   "wind_dir_long": "south-east",
   "hours": [
-   {
-    "t": "7pm",
-    "icon": "cloud",
-    "temp_c": 12,
-    "rain_pct": 5
-   },
    {
     "t": "8pm",
     "icon": "cloud",
@@ -66,6 +60,12 @@
    },
    {
     "t": "12am",
+    "icon": "cloud",
+    "temp_c": 10,
+    "rain_pct": 5
+   },
+   {
+    "t": "1am",
     "icon": "cloud",
     "temp_c": 10,
     "rain_pct": 5
