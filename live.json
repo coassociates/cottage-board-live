@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-10-30T19:13:03+00:00",
+ "generated_at": "2026-10-30T19:18:06+00:00",
  "counter": {
   "window_minutes": 30,
   "sample": 2,
-  "wait_now_p50_sec": 1476,
-  "wait_today_p50_sec": 823,
+  "wait_now_p50_sec": 842,
+  "wait_today_p50_sec": 817,
   "by_half_hour": [
    {
     "t": "12:00",
@@ -21,11 +21,15 @@
    {
     "t": "18:30",
     "p50_sec": 1344
+   },
+   {
+    "t": "19:00",
+    "p50_sec": 842
    }
   ]
  },
  "weather": {
-  "fetched_at": "2026-10-30T19:13:03+00:00",
+  "fetched_at": "2026-10-30T19:18:06+00:00",
   "temp_c": 12,
   "feels_c": 10,
   "desc": "Cloudy",
