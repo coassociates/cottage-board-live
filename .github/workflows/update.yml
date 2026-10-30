@@ -1,0 +1,40 @@
+name: Update live.json
+
+on:
+  schedule:
+    # Every 5 minutes, 09:00-23:00 UTC (covers UK trading hours in GMT and BST).
+    - cron: "*/5 9-23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build live.json
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
+          MET_OFFICE_API_KEY: ${{ secrets.MET_OFFICE_API_KEY }}
+          WEATHER_PROVIDER: ${{ vars.WEATHER_PROVIDER || 'metoffice' }}
+          COUNTER_EXCLUDE_SOURCES: ${{ vars.COUNTER_EXCLUDE_SOURCES }}
+        run: python live_poller.py --out live.json
+      - name: Commit if changed
+        run: |
+          git config user.name "cottage-board-bot"
+          git config user.email "cottage-board-bot@users.noreply.github.com"
+          git add live.json
+          if git diff --cached --quiet; then echo "no change"; exit 0; fi
+          git commit -m "live $(date -u +%Y-%m-%dT%H:%M)Z"
+          git push
