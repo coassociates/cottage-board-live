@@ -33,7 +33,7 @@ SHOP_LAT, SHOP_LON = 53.803134, -3.025281   # 31 Newhouse Road, Blackpool FY4 4J
 SQUARE_VERSION = "2025-01-23"
 NOW_WINDOW_MIN = 30
 MIN_WAIT_SEC, MAX_WAIT_SEC = 30, 90 * 60      # outside this a ticket was not a real counter wait
-DEFAULT_EXCLUDE = ["Square Online", "Square Kiosk", "Kiosk", "Deliveroo", "Just Eat", "Uber Eats"]
+DEFAULT_EXCLUDE = ["Square Online", "Deliveroo", "Just Eat", "Uber Eats"]   # kiosk orders are collected at the counter and go through the KDS
 
 
 def http_json(url, headers=None, body=None, timeout=30):
@@ -78,20 +78,23 @@ def square_orders(token, location, since_utc):
 
 
 def order_wait(o):
-    """(start, end, end_field) for one order, or None if it has no usable handover time."""
-    start = parse_ts(o.get("created_at"))
-    end, field = None, None
+    """(start, end, field) for one order, or None.
+
+    Strictly the kitchen display's own stamp: an order counts only when the KDS has bumped it,
+    which Square records as fulfilment state PREPARED/COMPLETED with a `ready_at` time in the
+    pickup or delivery block. Till events (payment, closing the sale) are never used
+    (Chris, 2026-10-30: use the KDS data, not the till).
+    """
+    created = parse_ts(o.get("created_at"))
+    best = None
     for f in o.get("fulfillments", []) or []:
-        pd = f.get("pickup_details") or {}
-        for key in ("ready_at", "picked_up_at"):
-            t = parse_ts(pd.get(key))
-            if t and (end is None or t < end):
-                end, field = t, key
-    if end is None and o.get("state") == "COMPLETED":
-        end, field = parse_ts(o.get("closed_at")), "closed_at"
-    if not start or not end:
-        return None
-    return start, end, field
+        for blk in ("pickup_details", "delivery_details"):
+            d = f.get(blk) or {}
+            placed = parse_ts(d.get("placed_at")) or created
+            ready = parse_ts(d.get("ready_at"))
+            if placed and ready and (best is None or ready < best[1]):
+                best = (placed, ready, f"{blk}.ready_at")
+    return best
 
 
 def counter_stats(orders, exclude, now_utc):
@@ -122,16 +125,12 @@ def counter_stats(orders, exclude, now_utc):
     by_half_hour = [{"t": k.strftime("%H:%M"), "p50_sec": int(statistics.median(v))}
                     for k, v in sorted(buckets.items()) if len(v) >= 2]
 
-    fields = {}
-    for _, _, f in rows:
-        fields[f] = fields.get(f, 0) + 1
     return {
         "window_minutes": NOW_WINDOW_MIN,
         "sample": len(now_rows),
         "wait_now_p50_sec": int(statistics.median(now_rows)) if now_rows else None,
         "wait_today_p50_sec": int(statistics.median([s for _, s in today_rows])) if today_rows else None,
         "by_half_hour": by_half_hour,
-        "end_fields": fields,   # which timestamp stood for "handover"; for checking, not display
     }
 
 
