@@ -34,6 +34,7 @@ jobs:
           MET_OFFICE_API_KEY: ${{ secrets.MET_OFFICE_API_KEY }}
           WEATHER_PROVIDER: ${{ vars.WEATHER_PROVIDER || 'metoffice' }}
           COUNTER_EXCLUDE_SOURCES: ${{ vars.COUNTER_EXCLUDE_SOURCES }}
+          KDS_STATION_NAME: ${{ vars.KDS_STATION_NAME || 'Counter Expeditor' }}
         run: |
           git config user.name "cottage-board-bot"
           git config user.email "cottage-board-bot@users.noreply.github.com"

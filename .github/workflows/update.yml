@@ -30,6 +30,7 @@ jobs:
           MET_OFFICE_API_KEY: ${{ secrets.MET_OFFICE_API_KEY }}
           WEATHER_PROVIDER: ${{ vars.WEATHER_PROVIDER || 'metoffice' }}
           COUNTER_EXCLUDE_SOURCES: ${{ vars.COUNTER_EXCLUDE_SOURCES }}
+          KDS_STATION_NAME: ${{ vars.KDS_STATION_NAME || 'Counter Expeditor' }}
         run: python live_poller.py --out live.json
       - name: Commit if changed
         run: |

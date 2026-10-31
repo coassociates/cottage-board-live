@@ -1,14 +1,10 @@
-name: Inspect KDS timestamps
+name: Inspect KDS tickets
 
-# One-off diagnostic, run by hand only. Prints redacted order timestamps and fulfilment
-# states to the log so we can see which field the KDS expeditor bump writes.
+# Diagnostic, run by hand only. Prints today's Counter Expeditor ticket times (no names, ids
+# or money) and a trial live.json counter block, without publishing anything.
 
 on:
   workflow_dispatch:
-    inputs:
-      days_back:
-        description: "Days back from today to include (0 = today only)"
-        default: "0"
 
 permissions:
   contents: read
@@ -22,15 +18,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Dump redacted order timestamps
+      - name: Today's Counter Expeditor tickets (times and sources only)
         env:
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
-          DAYS_BACK: ${{ inputs.days_back }}
-        run: python inspect_kds.py
-      - name: Discover Reporting API kitchen cubes
-        if: always()
+          KDS_STATION_NAME: ${{ vars.KDS_STATION_NAME || 'Counter Expeditor' }}
+        run: python live_poller.py --inspect
+      - name: Build live.json without publishing
         env:
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
-        run: python inspect_reporting.py
+          KDS_STATION_NAME: ${{ vars.KDS_STATION_NAME || 'Counter Expeditor' }}
+          WEATHER_PROVIDER: open-meteo
+        run: python live_poller.py --out /tmp/live.json && python -c "import json; print(json.dumps(json.load(open('/tmp/live.json'))['counter'], indent=1))"

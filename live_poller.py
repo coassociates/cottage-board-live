@@ -1,17 +1,23 @@
-"""Write live.json for The Cottage counter boards: counter wait times from Square, and the
-Blackpool weather. Runs every five minutes as a GitHub Actions job (see the cottage-board-live
+"""Write live.json for The Cottage counter boards: counter wait times from the Square kitchen
+display (KDS) via Square's Reporting API, and the Blackpool weather. Runs every five minutes as a GitHub Actions job (see the cottage-board-live
 repo) or anywhere with Python 3.9+. No third-party packages.
 
 Environment:
-  SQUARE_ACCESS_TOKEN   Square production access token with ORDERS_READ. Omit to skip counter.
+  SQUARE_ACCESS_TOKEN   Square production access token with REPORTING_READ. Omit to skip counter.
   SQUARE_LOCATION_ID    The takeaway location (default: the shop, L6NP58MH414CM).
+  KDS_STATION_NAME      KDS station whose bump marks handover (default "Counter Expeditor").
   WEATHER_PROVIDER      "metoffice" (default) or "open-meteo".
   MET_OFFICE_API_KEY    Met Office DataHub site-specific key. Omit to skip weather.
   COUNTER_EXCLUDE_SOURCES  Comma-separated order source names to ignore (default below).
 
 Usage:
   python live_poller.py --out live.json
-  python live_poller.py --inspect      # print recent orders' timestamps and sources, no write
+  python live_poller.py --inspect      # print today's station tickets (times and sources only), no write
+
+Counter wait = time from a ticket appearing on the Counter Expeditor screen to the expeditor
+bumping it (Chris, 2026-10-31: the KDS data, not the till). That comes from the Reporting API
+cube KitchenPerformanceTickets (via the KDS view), which lags the screen by up to ~15 minutes,
+so `as_of` carries the latest bump seen and the "now" window ends there, not at the clock.
 
 Counter figures are counter-only and never include volumes: no order counts or portions sold
 are written anywhere (Chris, 2026-10-30). `sample` is carried only so the board can suppress
@@ -23,6 +29,7 @@ import math
 import os
 import statistics
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -30,7 +37,8 @@ from zoneinfo import ZoneInfo
 
 LONDON = ZoneInfo("Europe/London")
 SHOP_LAT, SHOP_LON = 53.803134, -3.025281   # 31 Newhouse Road, Blackpool FY4 4JH
-SQUARE_VERSION = "2025-01-23"
+REPORTING_URL = "https://connect.squareup.com/reporting/v1/load"
+DEFAULT_STATION = "Counter Expeditor"
 NOW_WINDOW_MIN = 30
 MIN_WAIT_SEC, MAX_WAIT_SEC = 30, 90 * 60      # outside this a ticket was not a real counter wait
 DEFAULT_EXCLUDE = ["Square Online", "Deliveroo", "Just Eat", "Uber Eats"]   # kiosk orders are collected at the counter and go through the KDS
@@ -47,81 +55,67 @@ def parse_ts(s):
     if not s:
         return None
     try:
-        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+        d = datetime.fromisoformat(s.replace("Z", "+00:00"))
     except ValueError:
         return None
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
 
 # ------------------------------------------------------------------ Square ----
-def square_orders(token, location, since_utc):
-    headers = {"Authorization": f"Bearer {token}", "Square-Version": SQUARE_VERSION,
-               "Content-Type": "application/json"}
-    body = {
-        "location_ids": [location],
-        "query": {
-            "filter": {"state_filter": {"states": ["COMPLETED", "OPEN"]},
-                       "date_time_filter": {"updated_at": {"start_at": since_utc.isoformat()}}},
-            "sort": {"sort_field": "UPDATED_AT", "sort_order": "DESC"},
-        },
-        "limit": 500, "return_entries": False,
-    }
-    orders, cursor = [], None
-    for _ in range(10):
-        if cursor:
-            body["cursor"] = cursor
-        res = http_json("https://connect.squareup.com/v2/orders/search", headers, body)
-        orders += res.get("orders", [])
-        cursor = res.get("cursor")
-        if not cursor:
-            break
-    return orders
+def kds_tickets(token, location, station, since_utc, until_utc):
+    """Completed tickets on one KDS station, from Square's Reporting API (the KDS cube).
 
-
-def order_wait(o):
-    """(start, end, field) for one order, or None.
-
-    Strictly the kitchen display's own stamp (Chris, 2026-10-30: use the KDS data, not the
-    till). When the KDS bumps a ticket Square moves the fulfilment to PREPARED and touches the
-    order's `updated_at`; nothing else touches an open kiosk order between placing and bump,
-    so for an OPEN order in PREPARED state `updated_at` is the bump time. A `ready_at` stamp
-    is used if Square ever writes one. Orders COMPLETED at the till, or swept closed next
-    morning, carry no usable bump time and are ignored.
+    Returns [(displayed_at, bumped_at, source)] with UTC datetimes, newest first. One row per
+    chit: the KDS view can repeat a ticket per line item, so rows are de-duplicated on chit_id.
+    Time dimensions in the Reporting API are UTC and arrive without a zone suffix.
     """
-    created = parse_ts(o.get("created_at"))
-    updated = parse_ts(o.get("updated_at"))
-    best = None
-    for f in o.get("fulfillments", []) or []:
-        for blk in ("pickup_details", "delivery_details"):
-            d = f.get(blk) or {}
-            placed = parse_ts(d.get("placed_at")) or created
-            ready = parse_ts(d.get("ready_at"))
-            field = f"{blk}.ready_at"
-            if not ready and f.get("state") == "PREPARED" and o.get("state") == "OPEN":
-                ready, field = updated, "prepared.updated_at"
-            if placed and ready and (best is None or ready < best[1]):
-                best = (placed, ready, field)
-    return best
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    fmt = lambda d: d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    query = {
+        "dimensions": ["KDS.chit_id", "KDS.order_source", "KDS.display_on_kds_at", "KDS.actual_completed_at"],
+        "timeDimensions": [{"dimension": "KDS.actual_completed_at", "dateRange": [fmt(since_utc), fmt(until_utc)]}],
+        "filters": [{"member": "KDS.location_id", "operator": "equals", "values": [location]},
+                    {"member": "KDS.device_code_name", "operator": "equals", "values": [station]}],
+        "order": [["KDS.actual_completed_at", "desc"]],
+        "limit": 1000,
+    }
+    res = {}
+    for _ in range(10):
+        res = http_json(REPORTING_URL, headers, {"query": query}, timeout=90)
+        if res.get("error") == "Continue wait":   # long query still running server-side
+            time.sleep(3)
+            continue
+        break
+    if res.get("error"):
+        raise ValueError(f"reporting api: {res.get('error')}")
+    seen, out = set(), []
+    for r in res.get("data", []):
+        chit = r.get("KDS.chit_id")
+        if chit in seen:
+            continue
+        seen.add(chit)
+        shown, bumped = parse_ts(r.get("KDS.display_on_kds_at")), parse_ts(r.get("KDS.actual_completed_at"))
+        if shown and bumped:
+            out.append((shown, bumped, (r.get("KDS.order_source") or "").strip()))
+    return out
 
 
-def counter_stats(orders, exclude, now_utc):
+def counter_stats(tickets, exclude, now_utc, station):
     excl = {s.strip().lower() for s in exclude if s.strip()}
     rows = []
-    for o in orders:
-        src = ((o.get("source") or {}).get("name") or "").strip()
+    for shown, bumped, src in tickets:
         if src.lower() in excl:
             continue
-        w = order_wait(o)
-        if not w:
-            continue
-        start, end, field = w
-        sec = (end - start).total_seconds()
+        sec = (bumped - shown).total_seconds()
         if sec < MIN_WAIT_SEC or sec > MAX_WAIT_SEC:
             continue
-        rows.append((end, sec, field))
+        rows.append((bumped, sec))
 
     today = now_utc.astimezone(LONDON).date()
-    today_rows = [(e, s) for e, s, _ in rows if e.astimezone(LONDON).date() == today]
-    now_rows = [s for e, s in today_rows if e >= now_utc - timedelta(minutes=NOW_WINDOW_MIN)]
+    today_rows = [(e, s) for e, s in rows if e.astimezone(LONDON).date() == today]
+    # The cube lags the screen by up to ~15 min, so "now" is the 30 min up to the latest bump seen.
+    as_of = max((e for e, _ in today_rows), default=None)
+    now_rows = [s for e, s in today_rows if as_of and e >= as_of - timedelta(minutes=NOW_WINDOW_MIN)]
 
     buckets = {}
     for e, s in today_rows:
@@ -132,12 +126,24 @@ def counter_stats(orders, exclude, now_utc):
                     for k, v in sorted(buckets.items()) if len(v) >= 2]
 
     return {
+        "station": station,
+        "as_of": as_of.isoformat(timespec="seconds") if as_of else None,
         "window_minutes": NOW_WINDOW_MIN,
         "sample": len(now_rows),
         "wait_now_p50_sec": int(statistics.median(now_rows)) if now_rows else None,
         "wait_today_p50_sec": int(statistics.median([s for _, s in today_rows])) if today_rows else None,
         "by_half_hour": by_half_hour,
     }
+
+
+def inspect_tickets(tickets, station, now_utc):
+    """--inspect: times and sources only. No names, ids or money."""
+    srcs = {}
+    for _, _, s in tickets:
+        srcs[s or "(none)"] = srcs.get(s or "(none)", 0) + 1
+    print(f"{len(tickets)} tickets on '{station}' today; sources: {srcs}; now {now_utc.isoformat(timespec='seconds')}")
+    for shown, bumped, s in tickets[:25]:
+        print(f"  {s:14} shown {shown.strftime('%H:%M:%S')}  bumped {bumped.strftime('%H:%M:%S')}  {int((bumped - shown).total_seconds()):>5}s")
 
 
 # ----------------------------------------------------------------- weather ----
@@ -328,28 +334,18 @@ def cycle(args):
     location = os.environ.get("SQUARE_LOCATION_ID", "L6NP58MH414CM")
     exclude = os.environ.get("COUNTER_EXCLUDE_SOURCES")
     exclude = exclude.split(",") if exclude else DEFAULT_EXCLUDE
+    station = os.environ.get("KDS_STATION_NAME", DEFAULT_STATION)
     if token:
         try:
             midnight = now_utc.astimezone(LONDON).replace(hour=0, minute=0, second=0, microsecond=0)
-            orders = square_orders(token, location, midnight.astimezone(timezone.utc))
+            tickets = kds_tickets(token, location, station, midnight.astimezone(timezone.utc), now_utc)
             if args.inspect:
-                srcs = {}
-                for o in orders:
-                    s_ = (o.get("source") or {}).get("name") or "(none)"
-                    srcs[s_] = srcs.get(s_, 0) + 1
-                print("sources today:", srcs)
-                for o in orders[:12]:
-                    w = order_wait(o)
-                    print(o.get("id"), o.get("state"), (o.get("source") or {}).get("name"),
-                          "created", o.get("created_at"), "closed", o.get("closed_at"),
-                          "fulfilment", [(f.get("type"), f.get("state"),
-                                          {k: v for k, v in (f.get("pickup_details") or {}).items() if k != "recipient"})
-                                         for f in o.get("fulfillments", []) or []],
-                          "-> wait", f"{(w[1] - w[0]).total_seconds():.0f}s via {w[2]}" if w else None)
+                inspect_tickets(tickets, station, now_utc)
                 return False
-            out["counter"] = counter_stats(orders, exclude, now_utc)
+            out["counter"] = counter_stats(tickets, exclude, now_utc, station)
         except (urllib.error.URLError, urllib.error.HTTPError, KeyError, ValueError) as e:
-            print("square failed:", e, file=sys.stderr)
+            body = e.read().decode()[:300] if isinstance(e, urllib.error.HTTPError) else ""
+            print("square failed:", e, body, file=sys.stderr)
     else:
         print("SQUARE_ACCESS_TOKEN not set; counter skipped", file=sys.stderr)
 
@@ -374,7 +370,7 @@ def cycle(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="live.json")
-    ap.add_argument("--inspect", action="store_true", help="print recent Square orders (timestamps and sources only, no customer details) and exit")
+    ap.add_argument("--inspect", action="store_true", help="print today's KDS station tickets (times and sources only, no customer details) and exit")
     ap.add_argument("--loop", type=int, default=0, help="seconds between cycles; 0 runs once")
     ap.add_argument("--hours", default="", help="UTC hour range to work in, e.g. 9-23; the loop idles outside it")
     ap.add_argument("--max-minutes", type=int, default=330, help="stop the loop after this long (GitHub jobs are capped at 6 h)")
