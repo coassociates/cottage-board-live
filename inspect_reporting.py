@@ -1,5 +1,5 @@
-"""One-off: discover Reporting API cubes relating to the kitchen display and try to load
-today's rows. Redacted: no money, names, or full ids in the log."""
+"""One-off: load today's KDS tickets from the Reporting API, trying a few query shapes.
+Redacted: ids truncated, no ticket names, no money."""
 import json, os, sys, urllib.request, urllib.error, time
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
@@ -8,64 +8,73 @@ TOKEN = os.environ["SQUARE_ACCESS_TOKEN"]
 LOC = os.environ.get("SQUARE_LOCATION_ID", "L6NP58MH414CM")
 BASE = "https://connect.squareup.com/reporting"
 HDR = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
+today = str(datetime.now(timezone.utc).astimezone(ZoneInfo("Europe/London")).date())
+yday = str(datetime.now(timezone.utc).astimezone(ZoneInfo("Europe/London")).date() - timedelta(days=1))
 
-def call(method, path, body=None):
-    req = urllib.request.Request(BASE + path, data=json.dumps(body).encode() if body else None, headers=HDR, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return r.status, json.loads(r.read().decode())
-    except urllib.error.HTTPError as e:
-        return e.code, {"_body": e.read().decode()[:1500]}
+def load(q):
+    for _ in range(10):
+        req = urllib.request.Request(BASE + "/v1/load", data=json.dumps({"query": q}).encode(), headers=HDR, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=90) as r:
+                res = json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            return e.code, e.read().decode()[:800]
+        if res.get("error") == "Continue wait":
+            time.sleep(4); continue
+        return 200, res
+    return 0, "timed out waiting"
 
-st, meta = call("GET", "/v1/meta")
-print("meta ->", st)
-if st != 200:
-    print(meta); sys.exit(1)
-cubes = meta.get("cubes", [])
-print(f"{len(cubes)} cubes/views. names: {[c.get('name') for c in cubes]}")
-KW = ("kitchen", "kds", "ticket", "fulfil", "device", "station", "prep")
-hits = [c for c in cubes if any(k in json.dumps(c).lower() for k in KW)]
-print("\n=== cubes mentioning", KW, ":", [c.get("name") for c in hits])
-for c in hits:
-    print(f"\n--- {c.get('name')} type={c.get('type')} title={c.get('title')} desc={c.get('description')}")
-    extra = {k: v for k, v in c.items() if k not in ("name", "type", "title", "description", "measures", "dimensions", "segments")}
-    if extra: print("    other keys:", json.dumps(extra)[:600])
-    for kind in ("measures", "dimensions", "segments"):
-        for m in c.get(kind) or []:
-            print(f"    {kind[:-1]:9} {m.get('name'):60} type={m.get('type')} agg={m.get('aggType','')} title={m.get('title')} desc={(m.get('description') or '')[:120]}")
-
-# Try to load today's rows from the most kitchen-looking cube.
-target = next((c for c in hits if "kitchen" in c.get("name", "").lower()), None) or next((c for c in hits if "ticket" in c.get("name", "").lower()), None)
-if not target:
-    print("\nno kitchen/ticket cube found"); sys.exit(0)
-name = target["name"]
-dims = [d["name"] for d in target.get("dimensions") or []]
-timedims = [d["name"] for d in target.get("dimensions") or [] if d.get("type") == "time"]
-meas = [m["name"] for m in target.get("measures") or [] if m.get("aggType") in ("count", "countDistinct")][:2]
-print(f"\n=== loading {name}: time dims {timedims}")
-tdim = next((d for d in timedims if "complet" in d.lower()), None) or (timedims[0] if timedims else None)
-today = datetime.now(timezone.utc).astimezone(ZoneInfo("Europe/London")).date()
-# drop dimensions that would carry personal or money detail
-safe_dims = [d for d in dims if not any(x in d.lower() for x in ("name", "note", "money", "amount", "price", "customer", "recipient", "email", "phone"))]
-q = {"query": {"dimensions": safe_dims, "measures": meas,
-               "timeDimensions": ([{"dimension": tdim, "dateRange": [str(today - timedelta(days=1)), str(today)]}] if tdim else []),
-               "limit": 60}}
-if tdim:
-    q["query"]["order"] = {tdim: "desc"}
-print("query:", json.dumps(q))
-for attempt in range(8):
-    st, res = call("POST", "/v1/load", q)
-    if st == 200 and res.get("error") == "Continue wait":
-        time.sleep(3); continue
-    break
-print("load ->", st)
-if st != 200:
-    print(res); sys.exit(0)
-rows = res.get("data", [])
-print(f"{len(rows)} rows. annotation keys: {list((res.get('annotation') or {}).keys())}")
 def red(k, v):
-    if isinstance(v, str) and ("_id" in k.lower() or k.lower().endswith("id") or "uid" in k.lower()) and len(v) > 8:
+    k = k.split(".")[-1]
+    if isinstance(v, str) and (k.endswith("_id") or k.endswith("_key")) and len(v) > 8:
         return "…" + v[-6:]
     return v
-for r in rows[:60]:
-    print({k.split(".")[-1]: red(k, v) for k, v in r.items()})
+
+def show(label, q, maxrows=40):
+    print(f"\n=== {label}\n{json.dumps(q)}")
+    st, res = load(q)
+    if st != 200:
+        print("->", st, res); return None
+    rows = res.get("data", [])
+    print(f"-> 200, {len(rows)} rows, slowQuery={res.get('slowQuery')}")
+    for r in rows[:maxrows]:
+        print("  ", {k.split(".")[-1]: red(k, v) for k, v in r.items()})
+    return rows
+
+T = "KitchenPerformanceTickets"
+# A: station summary for today via KDS view, to learn station names/types
+show("A. stations today (KDS view)", {
+    "measures": ["KDS.ticket_count", "KDS.avg_ticket_time_seconds", "KDS.median_ticket_time_seconds"],
+    "dimensions": ["KDS.station_type", "KDS.device_code_name", "KDS.device_id", "KDS.auto_ready_setting_enabled"],
+    "filters": [{"member": "KDS.location_id", "operator": "equals", "values": [LOC]},
+                {"member": "KDS.local_date", "operator": "equals", "values": [today, yday]}]})
+
+# B: per-ticket rows, filters only, no timeDimensions
+rows = show("B. tickets today, filter on local_date", {
+    "dimensions": [f"{T}.chit_id", f"{T}.order_id", f"{T}.order_source", f"{T}.station_type", f"{T}.device_id",
+                   f"{T}.chit_created_at", f"{T}.display_on_kds_at", f"{T}.actual_completed_at", f"{T}.line_item_count"],
+    "filters": [{"member": f"{T}.location_id", "operator": "equals", "values": [LOC]},
+                {"member": f"{T}.local_date", "operator": "equals", "values": [today]}],
+    "order": {f"{T}.actual_completed_at": "desc"}, "limit": 40})
+
+if rows is None:
+    # C: same with timeDimensions instead of local_date filter
+    rows = show("C. tickets via timeDimensions", {
+        "dimensions": [f"{T}.chit_id", f"{T}.order_id", f"{T}.order_source", f"{T}.station_type", f"{T}.device_id",
+                       f"{T}.display_on_kds_at", f"{T}.actual_completed_at"],
+        "timeDimensions": [{"dimension": f"{T}.actual_completed_at", "dateRange": [yday, today]}],
+        "filters": [{"member": f"{T}.location_id", "operator": "equals", "values": [LOC]}],
+        "limit": 40})
+if rows is None:
+    # D: minimal
+    rows = show("D. minimal", {"dimensions": [f"{T}.station_type", f"{T}.actual_completed_at"], "limit": 20})
+if rows is None:
+    show("E. measure only", {"measures": [f"{T}.count"], "timeDimensions": [{"dimension": f"{T}.actual_completed_at", "dateRange": "last 7 days", "granularity": "day"}]})
+
+# F: freshness — the most recent completed ticket we can see right now vs the clock
+print("\n=== now UTC:", datetime.now(timezone.utc).isoformat(timespec="seconds"))
+show("F. latest 5 completions (freshness check)", {
+    "dimensions": [f"{T}.station_type", f"{T}.actual_completed_at", f"{T}.display_on_kds_at"],
+    "filters": [{"member": f"{T}.location_id", "operator": "equals", "values": [LOC]},
+                {"member": f"{T}.local_date", "operator": "equals", "values": [today]}],
+    "order": {f"{T}.actual_completed_at": "desc"}, "limit": 5})
