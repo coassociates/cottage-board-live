@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-31T14:38:16+00:00",
+ "generated_at": "2026-10-31T14:43:19+00:00",
  "counter": {
   "window_minutes": 30,
   "sample": 0,
@@ -8,12 +8,12 @@
   "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-10-31T14:38:16+00:00",
-  "temp_c": 11,
-  "feels_c": 8,
+  "fetched_at": "2026-10-31T14:43:19+00:00",
+  "temp_c": 12,
+  "feels_c": 10,
   "desc": "Cloudy",
   "icon": "cloud",
-  "wind_mph": 15,
+  "wind_mph": 12,
   "wind_dir": "SSE",
   "wind_dir_long": "south-south-east",
   "hours": [
