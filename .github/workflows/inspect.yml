@@ -28,3 +28,9 @@ jobs:
           SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
           DAYS_BACK: ${{ inputs.days_back }}
         run: python inspect_kds.py
+      - name: Discover Reporting API kitchen cubes
+        if: always()
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
+        run: python inspect_reporting.py
