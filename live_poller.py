@@ -40,6 +40,7 @@ SHOP_LAT, SHOP_LON = 53.803134, -3.025281   # 31 Newhouse Road, Blackpool FY4 4J
 REPORTING_URL = "https://connect.squareup.com/reporting/v1/load"
 DEFAULT_STATION = "Counter Expeditor"
 NOW_WINDOW_MIN = 30
+NOW_STALE_MIN = 45        # no bump seen for this long (cube lag included): the 'now' figure is withheld
 MIN_WAIT_SEC, MAX_WAIT_SEC = 30, 90 * 60      # outside this a ticket was not a real counter wait
 DEFAULT_EXCLUDE = ["Square Online", "Deliveroo", "Just Eat", "Uber Eats"]   # kiosk orders are collected at the counter and go through the KDS
 
@@ -116,6 +117,10 @@ def counter_stats(tickets, exclude, now_utc, station):
     # The cube lags the screen by up to ~15 min, so "now" is the 30 min up to the latest bump seen.
     as_of = max((e for e, _ in today_rows), default=None)
     now_rows = [s for e, s in today_rows if as_of and e >= as_of - timedelta(minutes=NOW_WINDOW_MIN)]
+    # The boards check the file's age, not as_of, so withhold a 'now' figure once the latest bump
+    # is too old to describe the counter right now (quiet spell, closed, or the cube is behind).
+    if as_of and now_utc - as_of > timedelta(minutes=NOW_STALE_MIN):
+        now_rows = []
 
     buckets = {}
     for e, s in today_rows:
