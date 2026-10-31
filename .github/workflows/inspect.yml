@@ -1,0 +1,30 @@
+name: Inspect KDS timestamps
+
+# One-off diagnostic, run by hand only. Prints redacted order timestamps and fulfilment
+# states to the log so we can see which field the KDS expeditor bump writes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: "Days back from today to include (0 = today only)"
+        default: "0"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dump redacted order timestamps
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
+          DAYS_BACK: ${{ inputs.days_back }}
+        run: python inspect_kds.py
