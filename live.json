@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-31T13:02:20+00:00",
+ "generated_at": "2026-10-31T13:07:22+00:00",
  "counter": {
   "window_minutes": 30,
   "sample": 0,
@@ -8,7 +8,7 @@
   "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-10-31T13:02:20+00:00",
+  "fetched_at": "2026-10-31T13:07:22+00:00",
   "temp_c": 10,
   "feels_c": 8,
   "desc": "Cloudy",
