@@ -1,10 +1,15 @@
 name: Inspect KDS tickets
 
 # Diagnostic, run by hand only. Prints today's Counter Expeditor ticket times (no names, ids
-# or money) and a trial live.json counter block, without publishing anything.
+# or money) and a trial live.json counter block, without publishing anything. Optionally runs
+# one ad-hoc Reporting API query (JSON) and prints its rows, redacted.
 
 on:
   workflow_dispatch:
+    inputs:
+      query:
+        description: "Optional Reporting API query JSON to run instead of the ticket listing"
+        default: ""
 
 permissions:
   contents: read
@@ -18,13 +23,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Ad-hoc Reporting API query
+        if: inputs.query != ''
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          QUERY: ${{ inputs.query }}
+        run: python probe.py
       - name: Today's Counter Expeditor tickets (times and sources only)
+        if: inputs.query == ''
         env:
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}
           KDS_STATION_NAME: ${{ vars.KDS_STATION_NAME || 'Counter Expeditor' }}
         run: python live_poller.py --inspect
       - name: Build live.json without publishing
+        if: inputs.query == ''
         env:
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           SQUARE_LOCATION_ID: ${{ vars.SQUARE_LOCATION_ID || 'L6NP58MH414CM' }}

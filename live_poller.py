@@ -18,6 +18,8 @@ Counter wait = time from a ticket appearing on the Counter Expeditor screen to t
 bumping it (Chris, 2026-10-31: the KDS data, not the till). That comes from the Reporting API
 cube KitchenPerformanceTickets (via the KDS view), which lags the screen by up to ~15 minutes,
 so `as_of` carries the latest bump seen and the "now" window ends there, not at the clock.
+The board shows `wait_now_sec`, the slowest of the last five bumps, never a median, so a
+growing queue is under-promised rather than flattered.
 
 Counter figures are counter-only and never include volumes: no order counts or portions sold
 are written anywhere (Chris, 2026-10-30). `sample` is carried only so the board can suppress
@@ -40,6 +42,7 @@ SHOP_LAT, SHOP_LON = 53.803134, -3.025281   # 31 Newhouse Road, Blackpool FY4 4J
 REPORTING_URL = "https://connect.squareup.com/reporting/v1/load"
 DEFAULT_STATION = "Counter Expeditor"
 NOW_WINDOW_MIN = 30
+NOW_LAST_N = 5            # the 'now' figure is the slowest of this many most recent bumps
 NOW_STALE_MIN = 45        # no bump seen for this long (cube lag included): the 'now' figure is withheld
 MIN_WAIT_SEC, MAX_WAIT_SEC = 30, 90 * 60      # outside this a ticket was not a real counter wait
 DEFAULT_EXCLUDE = ["Square Online", "Deliveroo", "Just Eat", "Uber Eats"]   # kiosk orders are collected at the counter and go through the KDS
@@ -113,7 +116,7 @@ def counter_stats(tickets, exclude, now_utc, station):
         rows.append((bumped, sec))
 
     today = now_utc.astimezone(LONDON).date()
-    today_rows = [(e, s) for e, s in rows if e.astimezone(LONDON).date() == today]
+    today_rows = sorted((e, s) for e, s in rows if e.astimezone(LONDON).date() == today)
     # The cube lags the screen by up to ~15 min, so "now" is the 30 min up to the latest bump seen.
     as_of = max((e for e, _ in today_rows), default=None)
     now_rows = [s for e, s in today_rows if as_of and e >= as_of - timedelta(minutes=NOW_WINDOW_MIN)]
@@ -121,6 +124,9 @@ def counter_stats(tickets, exclude, now_utc, station):
     # is too old to describe the counter right now (quiet spell, closed, or the cube is behind).
     if as_of and now_utc - as_of > timedelta(minutes=NOW_STALE_MIN):
         now_rows = []
+    # Never flatter a growing queue (Chris, 2026-10-31): the figure shown is the slowest of the
+    # last few bumps, not the median. Completed tickets always trail the people still waiting.
+    last_n = now_rows[-NOW_LAST_N:]
 
     buckets = {}
     for e, s in today_rows:
@@ -135,6 +141,7 @@ def counter_stats(tickets, exclude, now_utc, station):
         "as_of": as_of.isoformat(timespec="seconds") if as_of else None,
         "window_minutes": NOW_WINDOW_MIN,
         "sample": len(now_rows),
+        "wait_now_sec": int(max(last_n)) if len(last_n) >= NOW_LAST_N else None,
         "wait_now_p50_sec": int(statistics.median(now_rows)) if now_rows else None,
         "wait_today_p50_sec": int(statistics.median([s for _, s in today_rows])) if today_rows else None,
         "by_half_hour": by_half_hour,
