@@ -224,7 +224,7 @@ def sunset_local(date, lat, lon):
 
 
 def derive_line(now_local, now_icon, hours, temp_c, sunset):
-    """Short line for Board 1, long line for Board 2. hours: [(local_dt, icon, rain_pct)]."""
+    """Forecast line for both boards. hours: [(local_dt, icon, rain_pct)]."""
     wet = lambda icon, pct: icon in WET_ICONS or (pct is not None and pct >= 50)
     raining = now_icon in WET_ICONS
     upcoming = [(dt, wet(ic, pc)) for dt, ic, pc in hours[:8]]
@@ -243,11 +243,9 @@ def derive_line(now_local, now_icon, hours, temp_c, sunset):
         line = line or ("Dry this evening" if now_local.hour >= 15 else "Dry for a few hours")
     if sunset and sunset > now_local:
         line += f" · sunset {clock12(sunset)}"
-    long = line
-    dry_soon = not raining and all(not w for _, w in upcoming[:2])
-    if dry_soon and temp_c >= 10 and sunset and now_local < sunset + timedelta(minutes=30):
-        long += ". Eat them on the prom?"
-    return line, long
+    # No suggestions appended (Chris, 2026-10-31: the shop is nowhere near the prom and most
+    # customers take theirs home). Board 2's long line is the same forecast line.
+    return line, line
 
 
 def weather_metoffice(key, now_utc):
