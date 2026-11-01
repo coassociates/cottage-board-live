@@ -18,8 +18,10 @@ Counter wait = time from a ticket appearing on the Counter Expeditor screen to t
 bumping it (Chris, 2026-10-31: the KDS data, not the till). That comes from the Reporting API
 cube KitchenPerformanceTickets (via the KDS view), which lags the screen by up to ~15 minutes,
 so `as_of` carries the latest bump seen and the "now" window ends there, not at the clock.
-The board shows `wait_now_sec`, the slowest of the last five bumps, never a median, so a
-growing queue is under-promised rather than flattered.
+`wait_now_sec` is what the boards and the website show: the median wait of the last five
+counter orders. One order puts several tickets on the expeditor screen and they are often
+cleared minutes apart, so an order's wait is measured to the FIRST of its tickets being
+bumped, the closest the KDS gets to the handover (Chris, 2026-11-01).
 
 Counter figures are counter-only and never include volumes: no order counts or portions sold
 are written anywhere (Chris, 2026-10-30). `sample` is carried only so the board can suppress
@@ -42,7 +44,7 @@ SHOP_LAT, SHOP_LON = 53.803134, -3.025281   # 31 Newhouse Road, Blackpool FY4 4J
 REPORTING_URL = "https://connect.squareup.com/reporting/v1/load"
 DEFAULT_STATION = "Counter Expeditor"
 NOW_WINDOW_MIN = 30
-NOW_LAST_N = 5            # the 'now' figure is the slowest of this many most recent bumps
+NOW_LAST_N = 5            # the 'now' figure is the median wait of this many most recent orders
 NOW_STALE_MIN = 45        # no bump seen for this long (cube lag included): the 'now' figure is withheld
 MIN_WAIT_SEC, MAX_WAIT_SEC = 30, 90 * 60      # outside this a ticket was not a real counter wait
 DEFAULT_EXCLUDE = ["Square Online", "Deliveroo", "Just Eat", "Uber Eats"]   # kiosk orders are collected at the counter and go through the KDS
@@ -69,17 +71,18 @@ def parse_ts(s):
 def kds_tickets(token, location, station, since_utc, until_utc):
     """Completed tickets on one KDS station, from Square's Reporting API (the KDS cube).
 
-    Returns [(displayed_at, bumped_at, source)] with UTC datetimes, newest first. One row per
-    chit: the KDS view can repeat a ticket per line item, so rows are de-duplicated on chit_id.
+    Returns [(displayed_at, bumped_at, source, chit_id)] with UTC datetimes, newest first, one
+    row per ticket (a chit can carry several). The station is matched here, not in the API
+    filter: filtering on KDS.device_code_name server-side returned 3 of 16 rows on
+    2026-11-01, so the station comes back as a dimension and is compared in Python.
     Time dimensions in the Reporting API are UTC and arrive without a zone suffix.
     """
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     fmt = lambda d: d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
     query = {
-        "dimensions": ["KDS.chit_id", "KDS.order_source", "KDS.display_on_kds_at", "KDS.actual_completed_at"],
+        "dimensions": ["KDS.chit_id", "KDS.device_code_name", "KDS.order_source", "KDS.display_on_kds_at", "KDS.actual_completed_at"],
         "timeDimensions": [{"dimension": "KDS.actual_completed_at", "dateRange": [fmt(since_utc), fmt(until_utc)]}],
-        "filters": [{"member": "KDS.location_id", "operator": "equals", "values": [location]},
-                    {"member": "KDS.device_code_name", "operator": "equals", "values": [station]}],
+        "filters": [{"member": "KDS.location_id", "operator": "equals", "values": [location]}],
         "order": [["KDS.actual_completed_at", "desc"]],
         "limit": 1000,
     }
@@ -92,24 +95,28 @@ def kds_tickets(token, location, station, since_utc, until_utc):
         break
     if res.get("error"):
         raise ValueError(f"reporting api: {res.get('error')}")
-    seen, out = set(), []
+    out = []
     for r in res.get("data", []):
-        chit = r.get("KDS.chit_id")
-        if chit in seen:
+        if (r.get("KDS.device_code_name") or "").strip().lower() != station.strip().lower():
             continue
-        seen.add(chit)
         shown, bumped = parse_ts(r.get("KDS.display_on_kds_at")), parse_ts(r.get("KDS.actual_completed_at"))
         if shown and bumped:
-            out.append((shown, bumped, (r.get("KDS.order_source") or "").strip()))
+            out.append((shown, bumped, (r.get("KDS.order_source") or "").strip(), r.get("KDS.chit_id")))
     return out
 
 
 def counter_stats(tickets, exclude, now_utc, station):
     excl = {s.strip().lower() for s in exclude if s.strip()}
-    rows = []
-    for shown, bumped, src in tickets:
+    # One order per chit: shown when its first ticket appeared, done when its FIRST ticket was
+    # bumped. Later bumps on the same chit are screen clear-ups, not the customer waiting.
+    orders = {}
+    for shown, bumped, src, chit in tickets:
         if src.lower() in excl:
             continue
+        o = orders.setdefault(chit or (shown, src), [shown, bumped])
+        o[0], o[1] = min(o[0], shown), min(o[1], bumped)
+    rows = []
+    for shown, bumped in orders.values():
         sec = (bumped - shown).total_seconds()
         if sec < MIN_WAIT_SEC or sec > MAX_WAIT_SEC:
             continue
@@ -124,8 +131,8 @@ def counter_stats(tickets, exclude, now_utc, station):
     # is too old to describe the counter right now (quiet spell, closed, or the cube is behind).
     if as_of and now_utc - as_of > timedelta(minutes=NOW_STALE_MIN):
         now_rows = []
-    # Never flatter a growing queue (Chris, 2026-10-31): the figure shown is the slowest of the
-    # last few bumps, not the median. Completed tickets always trail the people still waiting.
+    # The figure shown is the median of the last few orders (Chris, 2026-11-01), so one ticket
+    # left on the screen cannot set the number on its own.
     last_n = now_rows[-NOW_LAST_N:]
 
     buckets = {}
@@ -141,7 +148,8 @@ def counter_stats(tickets, exclude, now_utc, station):
         "as_of": as_of.isoformat(timespec="seconds") if as_of else None,
         "window_minutes": NOW_WINDOW_MIN,
         "sample": len(now_rows),
-        "wait_now_sec": int(max(last_n)) if len(last_n) >= NOW_LAST_N else None,
+        "wait_now_sec": int(statistics.median(last_n)) if len(last_n) >= NOW_LAST_N else None,
+        "wait_now_method": f"median of last {NOW_LAST_N} orders, each to its first bump",
         "wait_now_p50_sec": int(statistics.median(now_rows)) if now_rows else None,
         "wait_today_p50_sec": int(statistics.median([s for _, s in today_rows])) if today_rows else None,
         "by_half_hour": by_half_hour,
@@ -149,12 +157,9 @@ def counter_stats(tickets, exclude, now_utc, station):
 
 
 def inspect_tickets(tickets, station, now_utc):
-    """--inspect: times and sources only. No names, ids or money."""
-    srcs = {}
-    for _, _, s in tickets:
-        srcs[s or "(none)"] = srcs.get(s or "(none)", 0) + 1
-    print(f"{len(tickets)} tickets on '{station}' today; sources: {srcs}; now {now_utc.isoformat(timespec='seconds')}")
-    for shown, bumped, s in tickets[:25]:
+    """--inspect: times and sources only. No names, ids, money, or counts (the log is public)."""
+    print(f"'{station}' tickets today, most recent first; now {now_utc.isoformat(timespec='seconds')}")
+    for shown, bumped, s, _chit in tickets[:40]:
         print(f"  {s:14} shown {shown.strftime('%H:%M:%S')}  bumped {bumped.strftime('%H:%M:%S')}  {int((bumped - shown).total_seconds()):>5}s")
 
 

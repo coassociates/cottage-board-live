@@ -20,7 +20,7 @@ for _ in range(10):
         time.sleep(4); continue
     break
 rows = res.get("data", [])
-print(f"-> {len(rows)} rows")
+print("-> rows (redacted; no totals, the log is public):")
 DROP = ("name", "note", "recipient", "email", "phone")
 for r in rows[:int(os.environ.get("MAX_ROWS", "60"))]:
     out = {}
