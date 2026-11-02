@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-02T10:24:42+00:00",
+ "generated_at": "2026-11-02T10:29:53+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": null,
@@ -12,12 +12,12 @@
   "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-11-02T10:24:42+00:00",
-  "temp_c": 7,
-  "feels_c": 5,
+  "fetched_at": "2026-11-02T10:29:53+00:00",
+  "temp_c": 9,
+  "feels_c": 6,
   "desc": "Sunny",
   "icon": "sun",
-  "wind_mph": 5,
+  "wind_mph": 11,
   "wind_dir": "NNE",
   "wind_dir_long": "north-north-east",
   "hours": [
@@ -35,15 +35,15 @@
    },
    {
     "t": "1pm",
-    "icon": "partly",
+    "icon": "cloud",
     "temp_c": 10,
-    "rain_pct": 0
+    "rain_pct": 3
    },
    {
     "t": "2pm",
-    "icon": "partly",
+    "icon": "cloud",
     "temp_c": 11,
-    "rain_pct": 0
+    "rain_pct": 3
    },
    {
     "t": "3pm",
