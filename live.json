@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-04T16:33:15+00:00",
+ "generated_at": "2026-11-04T16:38:20+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": "2026-11-04T13:36:51+00:00",
@@ -29,7 +29,7 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-04T16:33:15+00:00",
+  "fetched_at": "2026-11-04T16:38:20+00:00",
   "temp_c": 12,
   "feels_c": 9,
   "desc": "Partly cloudy",
@@ -76,7 +76,7 @@
    }
   ],
   "sunset": "4:33pm",
-  "line": "Dry this evening · sunset 4:33pm",
-  "line_long": "Dry this evening · sunset 4:33pm"
+  "line": "Dry this evening",
+  "line_long": "Dry this evening"
  }
 }
