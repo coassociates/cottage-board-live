@@ -1,110 +1,65 @@
 {
- "generated_at": "2026-11-04T22:59:09+00:00",
+ "generated_at": "2026-11-05T09:04:32+00:00",
  "counter": {
   "station": "Counter Expeditor",
-  "as_of": "2026-11-04T19:58:13+00:00",
+  "as_of": null,
   "window_minutes": 30,
   "sample": 0,
   "wait_now_sec": null,
   "wait_now_method": "median of last 5 orders, each to its first bump",
   "wait_now_p50_sec": null,
-  "wait_today_p50_sec": 414,
-  "by_half_hour": [
-   {
-    "t": "11:30",
-    "p50_sec": 600
-   },
-   {
-    "t": "12:00",
-    "p50_sec": 237
-   },
-   {
-    "t": "12:30",
-    "p50_sec": 335
-   },
-   {
-    "t": "13:30",
-    "p50_sec": 712
-   },
-   {
-    "t": "16:30",
-    "p50_sec": 685
-   },
-   {
-    "t": "17:00",
-    "p50_sec": 330
-   },
-   {
-    "t": "17:30",
-    "p50_sec": 393
-   },
-   {
-    "t": "18:00",
-    "p50_sec": 593
-   },
-   {
-    "t": "18:30",
-    "p50_sec": 393
-   },
-   {
-    "t": "19:00",
-    "p50_sec": 613
-   },
-   {
-    "t": "19:30",
-    "p50_sec": 624
-   }
-  ]
+  "wait_today_p50_sec": null,
+  "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-11-04T22:59:09+00:00",
-  "temp_c": 8,
-  "feels_c": 6,
+  "fetched_at": "2026-11-05T09:04:32+00:00",
+  "temp_c": 10,
+  "feels_c": 8,
   "desc": "Overcast",
   "icon": "cloud",
-  "wind_mph": 9,
-  "wind_dir": "NE",
-  "wind_dir_long": "north-east",
+  "wind_mph": 8,
+  "wind_dir": "ENE",
+  "wind_dir_long": "east-north-east",
   "hours": [
    {
-    "t": "11pm",
+    "t": "10am",
     "icon": "cloud",
-    "temp_c": 9,
-    "rain_pct": 4
+    "temp_c": 10,
+    "rain_pct": 13
    },
    {
-    "t": "12am",
-    "icon": "cloud",
-    "temp_c": 9,
-    "rain_pct": 4
-   },
-   {
-    "t": "1am",
+    "t": "11am",
     "icon": "rain",
-    "temp_c": 10,
-    "rain_pct": 24
+    "temp_c": 11,
+    "rain_pct": 45
    },
    {
-    "t": "2am",
+    "t": "12pm",
     "icon": "cloud",
-    "temp_c": 10,
-    "rain_pct": 6
+    "temp_c": 11,
+    "rain_pct": 12
    },
    {
-    "t": "3am",
+    "t": "1pm",
     "icon": "cloud",
-    "temp_c": 10,
-    "rain_pct": 7
+    "temp_c": 11,
+    "rain_pct": 5
    },
    {
-    "t": "4am",
+    "t": "2pm",
     "icon": "cloud",
-    "temp_c": 10,
-    "rain_pct": 6
+    "temp_c": 11,
+    "rain_pct": 8
+   },
+   {
+    "t": "3pm",
+    "icon": "partly",
+    "temp_c": 11,
+    "rain_pct": 1
    }
   ],
-  "sunset": "4:33pm",
-  "line": "Rain from 1am",
-  "line_long": "Rain from 1am"
+  "sunset": "4:31pm",
+  "line": "Rain from 11am · sunset 4:31pm",
+  "line_long": "Rain from 11am · sunset 4:31pm"
  }
 }
