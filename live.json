@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-06T16:25:50+00:00",
+ "generated_at": "2026-11-06T16:30:54+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": "2026-11-06T16:14:11+00:00",
@@ -37,7 +37,7 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-06T16:25:50+00:00",
+  "fetched_at": "2026-11-06T16:30:54+00:00",
   "temp_c": 11,
   "feels_c": 10,
   "desc": "Cloudy",
@@ -84,7 +84,7 @@
    }
   ],
   "sunset": "4:29pm",
-  "line": "Rain from 5pm · sunset 4:29pm",
-  "line_long": "Rain from 5pm · sunset 4:29pm"
+  "line": "Rain from 5pm",
+  "line_long": "Rain from 5pm"
  }
 }
