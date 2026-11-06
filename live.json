@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-06T12:22:45+00:00",
+ "generated_at": "2026-11-06T12:27:50+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": "2026-11-06T12:12:56+00:00",
@@ -21,12 +21,12 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-06T12:22:45+00:00",
+  "fetched_at": "2026-11-06T12:27:50+00:00",
   "temp_c": 10,
   "feels_c": 9,
   "desc": "Cloudy",
   "icon": "cloud",
-  "wind_mph": 5,
+  "wind_mph": 6,
   "wind_dir": "ENE",
   "wind_dir_long": "east-north-east",
   "hours": [
@@ -39,26 +39,26 @@
    {
     "t": "2pm",
     "icon": "cloud",
-    "temp_c": 12,
-    "rain_pct": 6
+    "temp_c": 11,
+    "rain_pct": 5
    },
    {
     "t": "3pm",
     "icon": "cloud",
-    "temp_c": 12,
+    "temp_c": 11,
     "rain_pct": 6
    },
    {
     "t": "4pm",
-    "icon": "cloud",
+    "icon": "rain",
     "temp_c": 11,
-    "rain_pct": 14
+    "rain_pct": 49
    },
    {
     "t": "5pm",
     "icon": "rain",
     "temp_c": 11,
-    "rain_pct": 53
+    "rain_pct": 55
    },
    {
     "t": "6pm",
@@ -68,7 +68,7 @@
    }
   ],
   "sunset": "4:29pm",
-  "line": "Dry for a few hours · sunset 4:29pm",
-  "line_long": "Dry for a few hours · sunset 4:29pm"
+  "line": "Rain from 4pm · sunset 4:29pm",
+  "line_long": "Rain from 4pm · sunset 4:29pm"
  }
 }
