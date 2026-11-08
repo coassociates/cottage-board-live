@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-08T17:25:45+00:00",
+ "generated_at": "2026-11-08T17:30:48+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": "2026-11-08T17:12:53+00:00",
@@ -17,32 +17,32 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-08T17:25:45+00:00",
+  "fetched_at": "2026-11-08T17:30:48+00:00",
   "temp_c": 9,
-  "feels_c": 8,
+  "feels_c": 7,
   "desc": "Cloudy",
   "icon": "cloud",
   "wind_mph": 6,
-  "wind_dir": "SE",
-  "wind_dir_long": "south-east",
+  "wind_dir": "ESE",
+  "wind_dir_long": "east-south-east",
   "hours": [
    {
     "t": "6pm",
-    "icon": "rain",
+    "icon": "cloud",
     "temp_c": 9,
-    "rain_pct": 52
+    "rain_pct": 17
    },
    {
     "t": "7pm",
     "icon": "rain",
-    "temp_c": 9,
-    "rain_pct": 81
+    "temp_c": 8,
+    "rain_pct": 51
    },
    {
     "t": "8pm",
-    "icon": "rain",
+    "icon": "cloud",
     "temp_c": 8,
-    "rain_pct": 43
+    "rain_pct": 12
    },
    {
     "t": "9pm",
@@ -59,12 +59,12 @@
    {
     "t": "11pm",
     "icon": "cloud",
-    "temp_c": 8,
+    "temp_c": 7,
     "rain_pct": 5
    }
   ],
   "sunset": "4:25pm",
-  "line": "Rain from 6pm",
-  "line_long": "Rain from 6pm"
+  "line": "Rain from 7pm",
+  "line_long": "Rain from 7pm"
  }
 }
