@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-13T16:27:30+00:00",
+ "generated_at": "2026-11-13T16:32:33+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": "2026-11-13T13:54:05+00:00",
@@ -29,14 +29,14 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-13T16:27:30+00:00",
-  "temp_c": 8,
-  "feels_c": 6,
-  "desc": "Light showers",
-  "icon": "showers",
-  "wind_mph": 5,
-  "wind_dir": "SE",
-  "wind_dir_long": "south-east",
+  "fetched_at": "2026-11-13T16:32:33+00:00",
+  "temp_c": 6,
+  "feels_c": 4,
+  "desc": "Overcast",
+  "icon": "cloud",
+  "wind_mph": 7,
+  "wind_dir": "WSW",
+  "wind_dir_long": "west-south-west",
   "hours": [
    {
     "t": "5pm",
@@ -46,21 +46,21 @@
    },
    {
     "t": "6pm",
-    "icon": "cloud",
+    "icon": "showers",
     "temp_c": 7,
-    "rain_pct": 12
+    "rain_pct": 32
    },
    {
     "t": "7pm",
     "icon": "partly-night",
     "temp_c": 7,
-    "rain_pct": 11
+    "rain_pct": 7
    },
    {
     "t": "8pm",
     "icon": "cloud",
-    "temp_c": 7,
-    "rain_pct": 10
+    "temp_c": 8,
+    "rain_pct": 12
    },
    {
     "t": "9pm",
@@ -71,12 +71,12 @@
    {
     "t": "10pm",
     "icon": "cloud",
-    "temp_c": 8,
-    "rain_pct": 7
+    "temp_c": 9,
+    "rain_pct": 6
    }
   ],
   "sunset": "4:17pm",
-  "line": "Dry from 5pm",
-  "line_long": "Dry from 5pm"
+  "line": "Rain from 6pm",
+  "line_long": "Rain from 6pm"
  }
 }
