@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-17T14:27:08+00:00",
+ "generated_at": "2026-11-17T14:32:12+00:00",
  "counter": {
   "station": "Counter Expeditor",
   "as_of": "2026-11-17T13:38:34+00:00",
@@ -25,54 +25,54 @@
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-17T14:27:08+00:00",
-  "temp_c": 6,
-  "feels_c": 3,
-  "desc": "Cloudy",
-  "icon": "cloud",
+  "fetched_at": "2026-11-17T14:32:12+00:00",
+  "temp_c": 7,
+  "feels_c": 4,
+  "desc": "Partly cloudy",
+  "icon": "partly",
   "wind_mph": 10,
   "wind_dir": "SE",
   "wind_dir_long": "south-east",
   "hours": [
    {
     "t": "3pm",
-    "icon": "showers",
+    "icon": "cloud",
     "temp_c": 7,
-    "rain_pct": 70
+    "rain_pct": 20
    },
    {
     "t": "4pm",
-    "icon": "cloud",
-    "temp_c": 9,
-    "rain_pct": 19
+    "icon": "showers",
+    "temp_c": 8,
+    "rain_pct": 71
    },
    {
     "t": "5pm",
     "icon": "rain",
     "temp_c": 10,
-    "rain_pct": 84
+    "rain_pct": 85
    },
    {
     "t": "6pm",
     "icon": "rain",
     "temp_c": 9,
-    "rain_pct": 89
+    "rain_pct": 82
    },
    {
     "t": "7pm",
     "icon": "rain",
     "temp_c": 8,
-    "rain_pct": 88
+    "rain_pct": 55
    },
    {
     "t": "8pm",
     "icon": "rain",
-    "temp_c": 7,
-    "rain_pct": 56
+    "temp_c": 8,
+    "rain_pct": 53
    }
   ],
   "sunset": "4:11pm",
-  "line": "Rain from 3pm · sunset 4:11pm",
-  "line_long": "Rain from 3pm · sunset 4:11pm"
+  "line": "Rain from 4pm · sunset 4:11pm",
+  "line_long": "Rain from 4pm · sunset 4:11pm"
  }
 }
