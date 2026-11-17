@@ -1,14 +1,14 @@
 {
- "generated_at": "2026-11-17T17:29:45+00:00",
+ "generated_at": "2026-11-17T17:34:48+00:00",
  "counter": {
   "station": "Counter Expeditor",
-  "as_of": "2026-11-17T17:12:17+00:00",
+  "as_of": "2026-11-17T17:19:44+00:00",
   "window_minutes": 30,
   "sample": 8,
-  "wait_now_sec": 368,
+  "wait_now_sec": 371,
   "wait_now_method": "median of last 5 orders, each to its first bump",
   "wait_now_p50_sec": 333,
-  "wait_today_p50_sec": 377,
+  "wait_today_p50_sec": 374,
   "by_half_hour": [
    {
     "t": "12:00",
@@ -32,59 +32,59 @@
    },
    {
     "t": "17:00",
-    "p50_sec": 389
+    "p50_sec": 371
    }
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-17T17:29:45+00:00",
+  "fetched_at": "2026-11-17T17:34:48+00:00",
   "temp_c": 9,
   "feels_c": 6,
-  "desc": "Cloudy",
-  "icon": "cloud",
-  "wind_mph": 17,
-  "wind_dir": "W",
-  "wind_dir_long": "west",
+  "desc": "Drizzle",
+  "icon": "rain",
+  "wind_mph": 21,
+  "wind_dir": "WSW",
+  "wind_dir_long": "west-south-west",
   "hours": [
    {
     "t": "6pm",
-    "icon": "rain",
+    "icon": "showers",
     "temp_c": 9,
-    "rain_pct": 54
+    "rain_pct": 68
    },
    {
     "t": "7pm",
-    "icon": "rain",
+    "icon": "showers",
     "temp_c": 8,
-    "rain_pct": 82
+    "rain_pct": 68
    },
    {
     "t": "8pm",
     "icon": "rain",
     "temp_c": 8,
-    "rain_pct": 84
+    "rain_pct": 80
    },
    {
     "t": "9pm",
     "icon": "rain",
     "temp_c": 8,
-    "rain_pct": 83
+    "rain_pct": 80
    },
    {
     "t": "10pm",
     "icon": "showers",
     "temp_c": 7,
-    "rain_pct": 41
+    "rain_pct": 40
    },
    {
     "t": "11pm",
     "icon": "showers",
-    "temp_c": 6,
-    "rain_pct": 64
+    "temp_c": 7,
+    "rain_pct": 63
    }
   ],
   "sunset": "4:11pm",
-  "line": "Rain from 6pm",
-  "line_long": "Rain from 6pm"
+  "line": "Dry from 1am",
+  "line_long": "Dry from 1am"
  }
 }
