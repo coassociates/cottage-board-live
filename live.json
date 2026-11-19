@@ -1,110 +1,65 @@
 {
- "generated_at": "2026-11-18T22:59:42+00:00",
+ "generated_at": "2026-11-19T09:00:14+00:00",
  "counter": {
   "station": "Counter Expeditor",
-  "as_of": "2026-11-18T19:56:26+00:00",
+  "as_of": null,
   "window_minutes": 30,
   "sample": 0,
   "wait_now_sec": null,
   "wait_now_method": "median of last 5 orders, each to its first bump",
   "wait_now_p50_sec": null,
-  "wait_today_p50_sec": 358,
-  "by_half_hour": [
-   {
-    "t": "11:30",
-    "p50_sec": 356
-   },
-   {
-    "t": "12:00",
-    "p50_sec": 354
-   },
-   {
-    "t": "12:30",
-    "p50_sec": 274
-   },
-   {
-    "t": "13:00",
-    "p50_sec": 429
-   },
-   {
-    "t": "13:30",
-    "p50_sec": 284
-   },
-   {
-    "t": "17:00",
-    "p50_sec": 440
-   },
-   {
-    "t": "17:30",
-    "p50_sec": 354
-   },
-   {
-    "t": "18:00",
-    "p50_sec": 448
-   },
-   {
-    "t": "18:30",
-    "p50_sec": 342
-   },
-   {
-    "t": "19:00",
-    "p50_sec": 758
-   },
-   {
-    "t": "19:30",
-    "p50_sec": 310
-   }
-  ]
+  "wait_today_p50_sec": null,
+  "by_half_hour": []
  },
  "weather": {
-  "fetched_at": "2026-11-18T22:59:42+00:00",
+  "fetched_at": "2026-11-19T09:00:14+00:00",
   "temp_c": 7,
-  "feels_c": 5,
-  "desc": "Partly cloudy",
-  "icon": "partly-night",
-  "wind_mph": 6,
-  "wind_dir": "ENE",
-  "wind_dir_long": "east-north-east",
+  "feels_c": 4,
+  "desc": "Cloudy",
+  "icon": "cloud",
+  "wind_mph": 11,
+  "wind_dir": "NE",
+  "wind_dir_long": "north-east",
   "hours": [
    {
-    "t": "11pm",
+    "t": "10am",
     "icon": "cloud",
     "temp_c": 7,
-    "rain_pct": 5
+    "rain_pct": 12
    },
    {
-    "t": "12am",
+    "t": "11am",
     "icon": "cloud",
-    "temp_c": 7,
-    "rain_pct": 5
+    "temp_c": 8,
+    "rain_pct": 12
    },
    {
-    "t": "1am",
+    "t": "12pm",
     "icon": "cloud",
-    "temp_c": 7,
-    "rain_pct": 6
+    "temp_c": 8,
+    "rain_pct": 13
    },
    {
-    "t": "2am",
+    "t": "1pm",
     "icon": "cloud",
-    "temp_c": 7,
-    "rain_pct": 6
+    "temp_c": 8,
+    "rain_pct": 12
    },
    {
-    "t": "3am",
+    "t": "2pm",
     "icon": "cloud",
-    "temp_c": 7,
-    "rain_pct": 10
+    "temp_c": 8,
+    "rain_pct": 11
    },
    {
-    "t": "4am",
+    "t": "3pm",
     "icon": "rain",
-    "temp_c": 7,
-    "rain_pct": 44
+    "temp_c": 8,
+    "rain_pct": 47
    }
   ],
-  "sunset": "4:09pm",
-  "line": "Dry this evening",
-  "line_long": "Dry this evening"
+  "sunset": "4:08pm",
+  "line": "Dry for a few hours · sunset 4:08pm",
+  "line_long": "Dry for a few hours · sunset 4:08pm"
  }
 }
