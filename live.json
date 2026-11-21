@@ -1,14 +1,14 @@
 {
- "generated_at": "2026-11-21T14:00:12+00:00",
+ "generated_at": "2026-11-21T14:05:15+00:00",
  "counter": {
   "station": "Counter Expeditor",
-  "as_of": "2026-11-21T13:14:10+00:00",
+  "as_of": "2026-11-21T13:53:02+00:00",
   "window_minutes": 30,
-  "sample": 0,
+  "sample": 2,
   "wait_now_sec": null,
   "wait_now_method": "median of last 5 orders, each to its first bump",
-  "wait_now_p50_sec": null,
-  "wait_today_p50_sec": 413,
+  "wait_now_p50_sec": 521,
+  "wait_today_p50_sec": 456,
   "by_half_hour": [
    {
     "t": "11:30",
@@ -25,11 +25,15 @@
    {
     "t": "13:00",
     "p50_sec": 531
+   },
+   {
+    "t": "13:30",
+    "p50_sec": 521
    }
   ]
  },
  "weather": {
-  "fetched_at": "2026-11-21T14:00:12+00:00",
+  "fetched_at": "2026-11-21T14:05:15+00:00",
   "temp_c": 7,
   "feels_c": 3,
   "desc": "Sunny",
